@@ -1,35 +1,77 @@
-import React from 'react'
-import { Link } from 'react-router-dom'
+import React, { useEffect, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { Box, Card, CardActions, CardContent, Button, Typography } from '@material-ui/core';
 import './ListaTema.css';
+import Tema from '../../../models/Tema';
+import { busca } from '../../../services/Service';
+import { useSelector } from 'react-redux';
+import { TokenState } from '../../../store/tokens/tokensReducer';
+import { toast } from 'react-toastify';
 
 function ListaTema() {
 
+  let history = useNavigate();
+
+  const [temas, setTemas] = useState<Tema[]>([])
+const token = useSelector<TokenState, TokenState["tokens"]>(
+    (state) => state.tokens
+  );
+ 
+
+  useEffect(() => {
+    if(token == "") {
+      toast.error('Você precisa estar logado', {
+        position: "top-right",
+        autoClose: 2000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: false,
+        draggable: false,
+        theme: "colored",
+        progress: undefined,
+    });
+      history("/login")
+    }
+  }, [token])
+
+  async function getTema() {
+    await busca("/temas", setTemas, {
+      headers: {
+        'Authorization': token
+      }
+    })  
+  }
+
+  useEffect(() => {
+    getTema()
+  }, [temas.length])
+
   return (
     <>
+    {temas.map(tema =>(
       <Box m={2} >
-        <Card variant="outlined">
+        <Card variant="outlined" className='card-tema'>
           <CardContent>
             <Typography color="textSecondary" gutterBottom>
               Tema
             </Typography>
-            <Typography variant="h5" component="h2">
-              Minha descrição
+            <Typography variant="h5" component="h2" className='descricao-tema'>
+              {tema.descricao}
             </Typography>
           </CardContent>
           <CardActions>
             <Box display="flex" justifyContent="center" mb={1.5} >
 
-              <Link to="" className="text-decorator-none">
+              <Link to={`/formularioTema/${tema.id}`} className="text-decorator-none">
                 <Box mx={1}>
-                  <Button variant="contained" className="marginLeft" size='small' color="primary" >
+                  <Button variant="contained" className="marginLeft, btn-atual-tema" size='small' color="primary" >
                     atualizar
                   </Button>
                 </Box>
               </Link>
-              <Link to="" className="text-decorator-none">
+              <Link to={`/deletarTema/${tema.id}`} className="text-decorator-none">
                 <Box mx={1}>
-                  <Button variant="contained" size='small' color="secondary">
+                  <Button variant="contained" size='small' color="secondary" className='btn-del-tema'>
                     deletar
                   </Button>
                 </Box>
@@ -38,6 +80,7 @@ function ListaTema() {
           </CardActions>
         </Card>
       </Box>
+    ))}
     </>
   );
 }
